@@ -1,12 +1,13 @@
-﻿Dictionary<string, string> clientes = new(); // chave: CPF do cliente, valor: nome do cliente
-Dictionary<string, double> produtos = new(); // chave: nome do produto, valor: preço do produto
-Dictionary<string, List<string>> carrinho = new(); // chave: nome do cliente, valor: lista de produtos no carrinho
+﻿using Comex;
+
+Dictionary<string, string> clientes = new();
+List<Produto> produtos = new(); //lista de produtos (com utilização de OO)
+Dictionary<string, List<Produto>> carrinho = new(); // carrinho com objetos Produto
 
 void ExibirMenuDeOpcoes()
 {
     Console.WriteLine("-- PROJETO COMEX --");
 
-    //exibir opção de cadastrar cliente
     Console.WriteLine("\nDigite 1 para cadastrar um Cliente");
     Console.WriteLine("\nDigite 2 para listar os Clientes");
     Console.WriteLine("\nDigite 3 para cadastrar um Produto");
@@ -21,33 +22,21 @@ void ExibirMenuDeOpcoes()
 
     switch (opcao)
     {
-        case 1:
-            CadastrarCliente();
-            break;
-        case 2:
-            ListarClientes();
-            break;
-        case 3:
-            CadastrarProduto();
-            break;
-        case 4:
-            ListarProdutos();
-            break;
-        case 5: 
-            AlterarPrecoProduto(); 
-            break;
-        case 6:
-            AdicionarProdutoNoCarrinho();
-            break;
-        case 7:
-            FecharCompra();
-            break;
-        case -1:
-            Console.WriteLine("Saindo do programa...");
-            break;
-        default:
-            break;
+        case 1: CadastrarCliente(); break;
+        case 2: ListarClientes(); break;
+        case 3: CadastrarProduto(); break;
+        case 4: ListarProdutos(); break;
+        case 5: AlterarPrecoProduto(); break;
+        case 6: AdicionarProdutoNoCarrinho(); break;
+        case 7: FecharCompra(); break;
+        case -1: Console.WriteLine("Saindo do programa..."); break;
+        default: break;
     }
+}
+
+Produto? BuscarProdutoPorNome(string nome)
+{
+    return produtos.FirstOrDefault(p => p.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase));
 }
 
 void FecharCompra()
@@ -57,6 +46,7 @@ void FecharCompra()
 
     Console.WriteLine("\nDigite o nome do cliente que deseja fechar a compra");
     string nomeCliente = Console.ReadLine()!;
+
     if (!carrinho.ContainsKey(nomeCliente))
     {
         Console.WriteLine("Cliente não cadastrado!");
@@ -68,9 +58,8 @@ void FecharCompra()
     Console.WriteLine($"\nProdutos no carrinho de {nomeCliente}:");
     foreach (var produto in carrinho[nomeCliente])
     {
-        double preco = produtos[produto];
-        total += preco;
-        Console.WriteLine($"Produto: {produto} - Preço: {preco}");
+        total += produto.Preco;
+        Console.WriteLine(produto.ExibirResumo());
     }
 
     Console.WriteLine($"\nTotal da compra: {total}");
@@ -90,6 +79,7 @@ void AdicionarProdutoNoCarrinho()
 
     Console.WriteLine("\nQual usuário está adicionando o produto ao carrinho?");
     string nomeCliente = Console.ReadLine()!;
+
     if (!clientes.ContainsValue(nomeCliente))
     {
         Console.WriteLine("Usuário não cadastrado!");
@@ -100,21 +90,22 @@ void AdicionarProdutoNoCarrinho()
     Console.WriteLine("\nDigite o nome do produto que deseja adicionar ao carrinho");
     string nomeProduto = Console.ReadLine()!;
 
-    if (!produtos.ContainsKey(nomeProduto))
+    var produto = BuscarProdutoPorNome(nomeProduto);
+    if (produto is null)
     {
         Console.WriteLine("Produto não cadastrado!");
         VoltarAoMenuPrincipal();
         return;
     }
 
-    //se não existir carrinho para o cliente, criar um novo
     if (!carrinho.ContainsKey(nomeCliente))
     {
-        carrinho[nomeCliente] = new List<string>();
+        carrinho[nomeCliente] = new List<Produto>();
     }
-    carrinho[nomeCliente].Add(nomeProduto);
 
-    Console.WriteLine($"\nProduto {nomeProduto} adicionado ao carrinho com sucesso!");
+    carrinho[nomeCliente].Add(produto);
+
+    Console.WriteLine($"\nProduto {produto.Nome} adicionado ao carrinho com sucesso!");
     VoltarAoMenuPrincipal();
 }
 
@@ -125,7 +116,9 @@ void AlterarPrecoProduto()
 
     Console.WriteLine("\nDigite o nome do produto que quer alterar o preço");
     string nome = Console.ReadLine()!;
-    if (!produtos.ContainsKey(nome))
+
+    var produto = BuscarProdutoPorNome(nome);
+    if (produto is null)
     {
         Console.WriteLine("Produto não cadastrado no sistema!");
         VoltarAoMenuPrincipal();
@@ -135,9 +128,9 @@ void AlterarPrecoProduto()
     Console.WriteLine("\nDigite o novo preço do produto");
     double novoPreco = double.Parse(Console.ReadLine()!);
 
-    produtos[nome] = novoPreco;
+    produto.AtualizarPreco(novoPreco);
 
-    Console.WriteLine($"Preço do produto {nome} alterado para {novoPreco} com sucesso!");
+    Console.WriteLine($"Preço do produto {produto.Nome} alterado para {novoPreco} com sucesso!");
     VoltarAoMenuPrincipal();
 }
 
@@ -190,7 +183,8 @@ void CadastrarProduto()
 
     Console.WriteLine("\nDigite o nome do produto");
     string nome = Console.ReadLine()!;
-    if (produtos.ContainsKey(nome))
+
+    if (BuscarProdutoPorNome(nome) is not null)
     {
         Console.WriteLine("Produto já cadastrado!");
         VoltarAoMenuPrincipal();
@@ -200,7 +194,8 @@ void CadastrarProduto()
     Console.WriteLine("\nDigite o preço do produto");
     double preco = double.Parse(Console.ReadLine()!);
 
-    produtos.Add(nome, preco);
+    var produto = new Produto(nome, preco);
+    produtos.Add(produto);
 
     Console.WriteLine($"Produto {nome} cadastrado com sucesso!");
     VoltarAoMenuPrincipal();
@@ -212,7 +207,7 @@ void ListarProdutos()
     Console.WriteLine("--Listar Produtos--");
     foreach (var produto in produtos)
     {
-        Console.WriteLine($"Código: {produto.Key} - Preço: {produto.Value}");
+        Console.WriteLine(produto.ExibirResumo());
     }
     VoltarAoMenuPrincipal();
 }
