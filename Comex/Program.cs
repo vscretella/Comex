@@ -1,4 +1,4 @@
-﻿using Comex;
+﻿using Comex.Models;
 
 Dictionary<string, string> clientes = new();
 List<Produto> produtos = new(); //lista de produtos (com utilização de OO)
@@ -7,7 +7,7 @@ Dictionary<string, List<Produto>> carrinho = new(); // carrinho com objetos Prod
 void ExibirMenuDeOpcoes()
 {
     Console.WriteLine("-- PROJETO COMEX --");
-
+    //menu de opções do sistema
     Console.WriteLine("\nDigite 1 para cadastrar um Cliente");
     Console.WriteLine("\nDigite 2 para listar os Clientes");
     Console.WriteLine("\nDigite 3 para cadastrar um Produto");
